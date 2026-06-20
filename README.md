@@ -9,9 +9,10 @@
 
 ### Sorani speech to text, on every device.
 
-Offline **Central Kurdish (Sorani)** speech-to-text on plain **CPU** — no GPU, no internet.
-Three Whisper models from **18 MB**, transcribing Sorani **several times faster than real time**,
-down to **~3% character error** on an honest, speaker-disjoint test.
+Offline **Central Kurdish (Sorani)** speech-to-text on plain **CPU** — no GPU, **no PyTorch**,
+no internet. Three Whisper models exported to **ONNX**, running on `onnxruntime` + numpy,
+**several times faster than real time**, down to **~3% character error** on an honest,
+speaker-disjoint test.
 
 [![Higher accuracy](https://img.shields.io/badge/higher%20accuracy-vekol.krd-6f42c1)](https://vekol.krd)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC--BY--NC--4.0-555)](LICENSE)
@@ -39,8 +40,8 @@ hosted version at **[vekol.krd](https://vekol.krd)** · part of **Vekol**, Revge
 | Language | Central Kurdish / Sorani (`ckb`), Arabic script |
 | Task | speech-to-text (transcription) |
 | Input | any audio (loaded at 16 kHz mono) |
-| Architecture | Whisper (seq2seq), fine-tuned with the `fa` script anchor, quantizable to int8/int4 |
-| Size | 18 MB (tiny, int4) to 241 MB (small, int8) |
+| Architecture | Whisper (seq2seq), fine-tuned with the `fa` script anchor, exported to ONNX |
+| Runtime | ONNX Runtime + numpy (CPU) — no PyTorch, no transformers |
 | Weights | [RevgeAI/vekol-stt-ckb-{tiny,base,small}](https://huggingface.co/RevgeAI) |
 
 ## Models
@@ -48,11 +49,11 @@ hosted version at **[vekol.krd](https://vekol.krd)** · part of **Vekol**, Revge
 Pick by footprint vs accuracy — `tiny` for the smallest device, `small` for the best
 transcripts, `base` for the balance.
 
-| Model | Params | int8 / int4 | CER (spacing-free) | CPU latency |
-|-------|--------|-------------|--------------------|-------------|
-| `whisper-tiny`  | 39M  | 37 / 18 MB  | 9.85% | ~0.25 s |
-| `whisper-base`  | 74M  | 72 / 36 MB  | 7.95% | ~0.45 s |
-| `whisper-small` | 244M | 241 / 121 MB | ~3% | ~1.3 s |
+| Model | Params | ONNX size | CER (spacing-free) | CPU latency |
+|-------|--------|-----------|--------------------|-------------|
+| `whisper-tiny`  | 39M  | ~150 MB | 9.85% | ~0.3 s |
+| `whisper-base`  | 74M  | ~240 MB | 7.95% | ~0.5 s |
+| `whisper-small` | 244M | ~650 MB | ~3% | ~1.5 s |
 
 Numbers are on the **official, speaker-disjoint** Common Voice 25 test split — no speaker
 overlap between train and test, so they reflect real generalization, not memorized voices
@@ -67,11 +68,8 @@ For the large models (down to ~1.9% CER) and live streaming, see [vekol.krd](htt
 pip install -r requirements.txt
 ```
 
-Weights download from Hugging Face on first run. To fetch one ahead of time:
-
-```bash
-huggingface-cli download RevgeAI/vekol-stt-ckb-base --local-dir ./whisper-base
-```
+Just `onnxruntime`, `numpy`, `soundfile`, and `huggingface_hub` — no PyTorch. The ONNX
+weights download from Hugging Face on first run.
 
 ## Usage
 
@@ -79,16 +77,14 @@ huggingface-cli download RevgeAI/vekol-stt-ckb-base --local-dir ./whisper-base
 python3 vekol_stt.py audio.wav
 # چاری دەردی کوردەواری خوێندنە، هەر خوێندنە
 
-# choose size and precision
 python3 vekol_stt.py audio.wav --model small   # tiny | base | small
-python3 vekol_stt.py audio.wav --quant int8    # fp32 | fp16 | int8 | int4
 ```
 
 From Python:
 
 ```python
 from vekol_stt import transcribe
-print(transcribe("audio.wav", model="base", quant="int8"))
+print(transcribe("audio.wav", model="base"))
 ```
 
 ## How it was built
@@ -99,8 +95,9 @@ has no Sorani token, so each model is trained with the Persian (`fa`) token as a
 anchor — without it, the small models drift into English or Russian. Ten epochs, AdamW at
 1e-5, fp16, with eight waveform augmentations (time-stretch, pitch, noise, gain, low-pass,
 time-mask, clipping, MP3) plus SpecAugment; the augmentation was the single biggest gain.
-Evaluation is on the official speaker-disjoint test split, and the models quantize to
-int8/int4 with no measurable accuracy loss.
+Evaluation is on the official speaker-disjoint test split. The fine-tuned models are then
+exported to ONNX (fp32, merged decoder with KV-cache) so they run on `onnxruntime` with no
+PyTorch — the output is identical to the original.
 
 ## Letters & text handling
 
@@ -113,9 +110,10 @@ and does not change the reading, which is why accuracy is measured spacing-free.
 
 ## Running it elsewhere
 
-The models load through `transformers`, so they run anywhere PyTorch does — Linux, macOS,
-Windows, a small server. For lighter deployment, export `tiny` or `base` to ONNX or a
-`whisper.cpp` / GGML build; int8 holds the accuracy at a quarter of the size.
+The models are standard ONNX (encoder + merged decoder with KV-cache), so ONNX Runtime can
+run them with no Python at all — C++, Rust, Go, Java, C#, JavaScript/Web, Android, iOS, or a
+Raspberry Pi. `vekol_stt.py` is the reference CPU implementation (numpy log-mel + greedy
+decode loop + byte-level token decode); port that small amount of glue to your target.
 
 ## Limitations
 
