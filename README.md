@@ -9,8 +9,9 @@
 
 ### Sorani speech to text, on every device.
 
-Offline **Central Kurdish (Sorani)** speech-to-text that runs on plain **CPU** —
-no GPU, no internet. Small Whisper models (down to ~18 MB) that transcribe Sorani in real time.
+Offline **Central Kurdish (Sorani)** speech-to-text on plain **CPU** — no GPU, no internet.
+Three Whisper models from **18 MB**, transcribing Sorani **several times faster than real time**,
+down to **~3% character error** on an honest, speaker-disjoint test.
 
 [![Higher accuracy](https://img.shields.io/badge/higher%20accuracy-vekol.krd-6f42c1)](https://vekol.krd)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC--BY--NC--4.0-555)](LICENSE)
@@ -34,17 +35,18 @@ hosted version at **[vekol.krd](https://vekol.krd)** · part of **Vekol**, Revge
 
 | | |
 |---|---|
-| Models | `vekol-stt-ckb-edge` (tiny, base, small) |
+| Models | `vekol-stt-ckb-edge` — three sizes: tiny, base, small |
 | Language | Central Kurdish / Sorani (`ckb`), Arabic script |
 | Task | speech-to-text (transcription) |
-| Input | 16 kHz mono audio |
+| Input | any audio (loaded at 16 kHz mono) |
 | Architecture | Whisper (seq2seq), fine-tuned with the `fa` script anchor, quantizable to int8/int4 |
-| Size | 18–241 MB, by model and precision |
+| Size | 18 MB (tiny, int4) to 241 MB (small, int8) |
 | Weights | [RevgeAI/vekol-stt-ckb-{tiny,base,small}](https://huggingface.co/RevgeAI) |
 
 ## Models
 
-Three sizes, so you can trade footprint for accuracy:
+Pick by footprint vs accuracy — `tiny` for the smallest device, `small` for the best
+transcripts, `base` for the balance.
 
 | Model | Params | int8 / int4 | CER (spacing-free) | CPU latency |
 |-------|--------|-------------|--------------------|-------------|
@@ -52,11 +54,12 @@ Three sizes, so you can trade footprint for accuracy:
 | `whisper-base`  | 74M  | 72 / 36 MB  | 7.95% | ~0.45 s |
 | `whisper-small` | 244M | 241 / 121 MB | ~3% | ~1.3 s |
 
-CER is the spacing-free character error rate on the official, speaker-disjoint Common
-Voice 25 test split (Kurdish has no standard word-spacing, so character error is the fair
-measure). Latency is for a ~7 s clip on a 4-core CPU (fp32, greedy) — all three run
-several times faster than real time. For the large models (down to ~1.9% CER) and
-real-time streaming, see [vekol.krd](https://vekol.krd).
+Numbers are on the **official, speaker-disjoint** Common Voice 25 test split — no speaker
+overlap between train and test, so they reflect real generalization, not memorized voices
+(a common way Kurdish ASR scores get inflated). CER is the **spacing-free** character error
+rate, because Kurdish has no standard word-spacing and word error would over-penalize valid
+spelling. Latency is one ~7 s clip on a 4-core CPU (fp32, greedy); all three beat real time.
+For the large models (down to ~1.9% CER) and live streaming, see [vekol.krd](https://vekol.krd).
 
 ## Install
 
@@ -64,8 +67,7 @@ real-time streaming, see [vekol.krd](https://vekol.krd).
 pip install -r requirements.txt
 ```
 
-The weights live on Hugging Face. The script downloads them on first run, or grab one
-yourself:
+Weights download from Hugging Face on first run. To fetch one ahead of time:
 
 ```bash
 huggingface-cli download RevgeAI/vekol-stt-ckb-base --local-dir ./whisper-base
@@ -74,8 +76,8 @@ huggingface-cli download RevgeAI/vekol-stt-ckb-base --local-dir ./whisper-base
 ## Usage
 
 ```bash
-# one file
 python3 vekol_stt.py audio.wav
+# بۆ یەکەم جار لە فیلمی دڵڕاکەی خەڵک دەرکەوت
 
 # choose size and precision
 python3 vekol_stt.py audio.wav --model small   # tiny | base | small
@@ -89,54 +91,39 @@ from vekol_stt import transcribe
 print(transcribe("audio.wav", model="base", quant="int8"))
 ```
 
-## Samples
-
-In [`samples/`](samples/) — each clip has the **edge** transcription (this repo) and a
-**hosted, higher-accuracy** version (from [vekol.krd](https://vekol.krd)), so you can see
-the difference:
-
-| Audio | Edge (this model) | Hosted — higher accuracy |
-|-------|-------------------|--------------------------|
-| `sample1.wav` | `sample1.txt` | `sample1-hosted.txt` |
-| `sample2.wav` | `sample2.txt` | `sample2-hosted.txt` |
-
-The edge files run fully offline on CPU. The hosted output is more accurate — try your own
-audio at **[vekol.krd](https://vekol.krd)**.
-
 ## How it was built
 
-Fine-tuned from `openai/whisper-{tiny,base,small}` on about 100k clips of Central Kurdish
-speech from Common Voice 25.0 (ckb) and FLEURS (ckb_iq), normalized to Sorani orthography.
-Each size is trained with the Persian (`fa`) language token as a script anchor, since
-Whisper has no Sorani token. Ten epochs, AdamW at 1e-5, fp16, with waveform augmentation
-(time-stretch, pitch, noise, gain, low-pass, time-mask, clipping, MP3) and SpecAugment;
-augmentation was the single biggest gain. The models quantize to int8/int4 with no
-measurable accuracy loss.
+Fine-tuned from `openai/whisper-{tiny,base,small}` on ~100k clips of Central Kurdish speech
+from Common Voice 25.0 (ckb) and FLEURS (ckb_iq), normalized to Sorani orthography. Whisper
+has no Sorani token, so each model is trained with the Persian (`fa`) token as a script
+anchor — without it, the small models drift into English or Russian. Ten epochs, AdamW at
+1e-5, fp16, with eight waveform augmentations (time-stretch, pitch, noise, gain, low-pass,
+time-mask, clipping, MP3) plus SpecAugment; the augmentation was the single biggest gain.
+Evaluation is on the official speaker-disjoint test split, and the models quantize to
+int8/int4 with no measurable accuracy loss.
 
 ## Letters & text handling
 
-`vekol_stt.py` returns Sorani text normalized so nothing is dropped: Arabic letters and
-digits are folded onto the Kurdish forms the model uses (Arabic kaf `ك`→`ک`, teh-marbuta
-`ة`→`ە`, alef-maksura `ى`→`ی`, waw-hamza `ؤ`→`و`, Arabic/Farsi digits → ASCII), and
-diacritics, tatweel, and zero-width marks are stripped (NFC). Kurdish has no standard
-word-spacing, so the output may be unspaced or differently spaced in places; this is
-expected and does not change the character-level reading.
+`vekol_stt.py` returns Sorani normalized so nothing is dropped. It folds the common Arabic
+variants onto the Kurdish letters the model uses — kaf `ك`→`ک`, ya `ي`/`ى`→`ی`, teh-marbuta
+`ة`→`ە`, waw-hamza `ؤ`→`و`, the alef variants → `ا` — maps Arabic and Farsi digits to ASCII,
+and strips diacritics, tatweel, and zero-width marks (NFC throughout). Kurdish has no fixed
+word-spacing, so output may be spaced differently from a given reference; this is expected
+and does not change the reading, which is why accuracy is measured spacing-free.
 
 ## Running it elsewhere
 
 The models load through `transformers`, so they run anywhere PyTorch does — Linux, macOS,
-Windows, a small server. For lower-level deployment, export `tiny` and `base` to ONNX or a
-`whisper.cpp` / GGML build; int8 keeps the accuracy at a quarter of the size.
+Windows, a small server. For lighter deployment, export `tiny` or `base` to ONNX or a
+`whisper.cpp` / GGML build; int8 holds the accuracy at a quarter of the size.
 
 ## Limitations
 
-Trained on read speech (Common Voice, FLEURS): clear and accurate there, but accuracy
-drops on far-field, heavy noise, or strong dialectal variation. `tiny` and `base` are for
-on-device drafts and quick input, not transcripts you ship unchecked — use `small`, or the
-hosted service, when accuracy matters. Sorani only (`ckb`), not Kurmanji or other variants.
-
-For the most accurate transcription and real-time streaming, use the hosted version at
-[vekol.krd](https://vekol.krd).
+Trained on read speech (Common Voice, FLEURS): accurate there, weaker on far-field audio,
+heavy noise, or strong dialect. `tiny` and `base` are for on-device drafts and quick input,
+not transcripts you ship unchecked — use `small`, or the hosted service, when it has to be
+right. Sorani only (`ckb`), not Kurmanji or other variants. Whisper transcribes a clip at a
+time; for continuous live captioning use the streaming model at [vekol.krd](https://vekol.krd).
 
 ## License & credits
 
