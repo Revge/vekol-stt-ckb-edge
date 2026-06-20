@@ -77,7 +77,7 @@ huggingface-cli download RevgeAI/vekol-stt-ckb-base --local-dir ./whisper-base
 
 ```bash
 python3 vekol_stt.py audio.wav
-# بۆ یەکەم جار لە فیلمی دڵڕاکەی خەڵک دەرکەوت
+# چاری دەردی کوردەواری خوێندنە، هەر خوێندنە
 
 # choose size and precision
 python3 vekol_stt.py audio.wav --model small   # tiny | base | small
