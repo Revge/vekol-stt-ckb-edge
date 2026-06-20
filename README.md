@@ -46,16 +46,17 @@ hosted version at **[vekol.krd](https://vekol.krd)** · part of **Vekol**, Revge
 
 Three sizes, so you can trade footprint for accuracy:
 
-| Model | Params | int8 / int4 | CER (spacing-free) | Latency |
-|-------|--------|-------------|--------------------|---------|
-| `whisper-tiny`  | 39M  | 37 / 18 MB  | 9.85% | ~0.4 s/clip |
-| `whisper-base`  | 74M  | 72 / 36 MB  | 7.95% | ~0.5 s/clip |
-| `whisper-small` | 244M | 241 / 121 MB | ~3% | ~0.9 s/clip |
+| Model | Params | int8 / int4 | CER (spacing-free) | CPU latency |
+|-------|--------|-------------|--------------------|-------------|
+| `whisper-tiny`  | 39M  | 37 / 18 MB  | 9.85% | ~0.25 s |
+| `whisper-base`  | 74M  | 72 / 36 MB  | 7.95% | ~0.45 s |
+| `whisper-small` | 244M | 241 / 121 MB | ~3% | ~1.3 s |
 
 CER is the spacing-free character error rate on the official, speaker-disjoint Common
 Voice 25 test split (Kurdish has no standard word-spacing, so character error is the fair
-measure). For the large models (down to ~1.9% CER) and real-time streaming, see
-[vekol.krd](https://vekol.krd).
+measure). Latency is for a ~7 s clip on a 4-core CPU (fp32, greedy) — all three run
+several times faster than real time. For the large models (down to ~1.9% CER) and
+real-time streaming, see [vekol.krd](https://vekol.krd).
 
 ## Install
 
