@@ -1,5 +1,7 @@
 # Model Card — Vekol STT (ckb) Edge
 
+Author: Darvan Shvan
+
 ## Overview
 
 A set of three small Whisper models fine-tuned for Central Kurdish (Sorani, `ckb`)

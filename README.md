@@ -1,12 +1,23 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/vekol-white.svg">
+  <img src="assets/vekol-black.svg" alt="Vekol" width="300">
+</picture>
+
 # Vekol · STT
 
-Kurdish Sorani speech to text, on every device.
+### Kurdish Sorani speech to text, on every device.
+
+by **Darvan Shvan**
 
 ![quality](https://img.shields.io/badge/CER-1.9%25%20%E2%86%92%209.9%25-informational)
 ![license](https://img.shields.io/badge/license-CC--BY--NC%204.0-lightgrey)
 ![base](https://img.shields.io/badge/base-OpenAI%20Whisper-blue)
 ![language](https://img.shields.io/badge/language-ckb%20(Sorani)-green)
 ![runtime](https://img.shields.io/badge/runtime-CPU%20%2F%20edge-orange)
+
+</div>
 
 > These are the free, on-device edge models. For the large, more accurate models
 > (down to ~1.9% CER) and real-time streaming, use the hosted service at
@@ -98,7 +109,7 @@ model attribution.
 ```bibtex
 @misc{vekol_stt_ckb_edge,
   title  = {Vekol STT (ckb) Edge: small Whisper models for Kurdish Sorani speech-to-text},
-  author = {Revge},
+  author = {Darvan Shvan},
   year   = {2026},
   url    = {https://github.com/Revge/vekol-stt-ckb-edge}
 }
