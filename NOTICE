@@ -1,0 +1,18 @@
+Vekol STT (ckb) Edge
+Copyright (c) 2026 Revge
+
+This repository contains code and fine-tuned model weights for Central Kurdish
+(Sorani) speech-to-text, released under CC-BY-NC 4.0 (see LICENSE).
+
+Attribution
+-----------
+- Base models: OpenAI Whisper (tiny/base/small), MIT License.
+  https://github.com/openai/whisper
+- Training data:
+  - Mozilla Common Voice 25.0 (ckb), CC0.
+  - Google FLEURS (ckb_iq), CC-BY 4.0.
+
+The fine-tuned weights in this repository are derivative works of the MIT-licensed
+Whisper models. The weights and the code here are distributed under CC-BY-NC 4.0.
+
+For commercial use, see the hosted service at https://vekol.krd or contact the authors.

@@ -1,0 +1,6 @@
+torch
+transformers>=4.49
+librosa
+soundfile
+optimum-quanto      # int8 / int4 quantization (optional)
+ninja               # required by quanto for int4 kernels (optional)

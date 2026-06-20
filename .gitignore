@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.wav
+*.mp3
+*.flac
+# model weights live on Hugging Face, not in git
+*.safetensors
+*.bin
